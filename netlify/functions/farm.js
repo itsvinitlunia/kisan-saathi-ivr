@@ -6,6 +6,7 @@ const nutrients = require('../../data/nutrients.json'); // keep same relative pa
 
 exports.handler = async (event) => {
   const params = qs.parse(event.body || '');
+  console.log("Incoming params:", params);
   const { Digits, From: callerNumber } = params;
   const twiml = new VoiceResponse();
 
