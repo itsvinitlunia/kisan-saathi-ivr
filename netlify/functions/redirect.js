@@ -3,7 +3,7 @@ const VoiceResponse = twilio.twiml.VoiceResponse;
 
 exports.handler = async () => {
   const twiml = new VoiceResponse();
-  twiml.dial('+919702120202');
+  twiml.dial('+919082497277');
   return {
     statusCode: 200,
     headers: {'Content-Type':'text/xml'},
