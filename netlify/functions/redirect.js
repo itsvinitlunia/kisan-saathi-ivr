@@ -7,7 +7,7 @@ exports.handler = async () => {
 
   // Announce then dial
   twiml.say('Please wait while we connect your call.');
-  twiml.dial('+919702120202');
+  twiml.dial('+919082497277');
 
   return {
     statusCode: 200,

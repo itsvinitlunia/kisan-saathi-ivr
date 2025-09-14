@@ -57,7 +57,7 @@ exports.handler = async (event) => {
     } else if (Digits === '4') {
       // Call transfer
       twiml.say('Please wait while we connect your call.');
-      twiml.dial('+919702120202');
+      twiml.dial('+919082497277');
     } else {
       twiml.say('Invalid selection. Goodbye.');
     }
