@@ -2,14 +2,14 @@
 const qs = require('querystring');
 const twilio = require('twilio');
 const VoiceResponse = twilio.twiml.VoiceResponse;
-const nutrients = require('../../data/nutrients.json'); // adjust path if needed
+const nutrients = require('../../data/nutrients.json'); // adjust if path differs
 
 exports.handler = async (event) => {
   const params = qs.parse(event.body || '');
   const { Digits, From: callerNumber } = params;
   const twiml = new VoiceResponse();
 
-  // Debug incoming params
+  // Debug logs
   console.log("DEBUG - Incoming params:", params);
   console.log("DEBUG - callerNumber detected:", callerNumber);
 
@@ -30,7 +30,7 @@ exports.handler = async (event) => {
   if (!record) {
     twiml.say(`We could not find Farm ID ${farmId}. We will send you a notification by SMS.`);
     try {
-      console.log("DEBUG - Sending 'farm not found' SMS to:", callerNumber, "from:", process.env.TWILIO_PHONE_NUMBER);
+      console.log("DEBUG - Sending 'farm not found' SMS to:", callerNumber);
       const res = await client.messages.create({
         to: callerNumber,
         from: process.env.TWILIO_PHONE_NUMBER,
@@ -49,20 +49,13 @@ exports.handler = async (event) => {
     };
   }
 
-  // Build formatted SMS
-  const fmt = (v) => (typeof v === 'number' ? v.toFixed(4) : String(v));
-  const messageLines = [
-    `🌱 Kisan Saathi — Farm Nutrient Report`,
-    `Farm ID: ${record['Farm-ID']}`,
-    '',
-    `Nitrogen → High: ${fmt(record['Nitrogen - High'])}, Medium: ${fmt(record['Nitrogen - Medium'])}, Low: ${fmt(record['Nitrogen - Low'])}`,
-    `Phosphorous → High: ${fmt(record['Phosphorous - High'])}, Medium: ${fmt(record['Phosphorous - Medium'])}, Low: ${fmt(record['Phosphorous - Low'])}`,
-    `Potassium → High: ${fmt(record['Potassium - High'])}, Medium: ${fmt(record['Potassium - Medium'])}, Low: ${fmt(record['Potassium - Low'])}`,
-    `pH → Acidic: ${fmt(record['pH - Acidic'])}, Neutral: ${fmt(record['pH - Neutral'])}, Alkaline: ${fmt(record['pH - Alkaline'])}`,
-    '',
-    `This is an automated SMS from Kisan Saathi.`
-  ];
-  const body = messageLines.join('\n');
+  // ✅ Shortened trial-safe message (<160 chars)
+  const body =
+    `🌱 KisanSaathi Farm ${record['Farm-ID']} | ` +
+    `N: H=${record['Nitrogen - High']},M=${record['Nitrogen - Medium']},L=${record['Nitrogen - Low']} | ` +
+    `P: H=${record['Phosphorous - High']},M=${record['Phosphorous - Medium']},L=${record['Phosphorous - Low']} | ` +
+    `K: H=${record['Potassium - High']},M=${record['Potassium - Medium']},L=${record['Potassium - Low']} | ` +
+    `pH: A=${record['pH - Acidic']},N=${record['pH - Neutral']},Alk=${record['pH - Alkaline']}`;
 
   try {
     console.log("DEBUG - Sending SMS to:", callerNumber, "from:", process.env.TWILIO_PHONE_NUMBER);
