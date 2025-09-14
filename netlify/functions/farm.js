@@ -2,14 +2,16 @@
 const qs = require('querystring');
 const twilio = require('twilio');
 const VoiceResponse = twilio.twiml.VoiceResponse;
-const nutrients = require('../../data/nutrients.json'); // keep same relative path
+const nutrients = require('../../data/nutrients.json'); // adjust path if needed
 
 exports.handler = async (event) => {
   const params = qs.parse(event.body || '');
-  console.log("Incoming params:", params);
-  console.log("DEBUG - Incoming params:", params, "CallerNumber:", callerNumber);
   const { Digits, From: callerNumber } = params;
   const twiml = new VoiceResponse();
+
+  // Debug incoming params
+  console.log("DEBUG - Incoming params:", params);
+  console.log("DEBUG - callerNumber detected:", callerNumber);
 
   if (!Digits || !callerNumber) {
     twiml.say('Did not receive Farm ID or caller information. Goodbye.');
@@ -27,20 +29,19 @@ exports.handler = async (event) => {
 
   if (!record) {
     twiml.say(`We could not find Farm ID ${farmId}. We will send you a notification by SMS.`);
-
     try {
+      console.log("DEBUG - Sending 'farm not found' SMS to:", callerNumber, "from:", process.env.TWILIO_PHONE_NUMBER);
       const res = await client.messages.create({
         to: callerNumber,
         from: process.env.TWILIO_PHONE_NUMBER,
-        body: `🌱 Kisan Saathi: Farm ID ${farmId} not found. Please verify the ID and try again.`
+        body: `🌱 Kisan Saathi: Farm ID ${farmId} not found. Please verify and try again.`
       });
-      console.log('Farm-not-found SMS sent, sid:', res && res.sid);
+      console.log("DEBUG - SMS SID:", res && res.sid);
       twiml.say('A notification has been sent to your phone.');
     } catch (err) {
       console.error('Farm SMS send failed (not-found):', err);
       twiml.say('We attempted to send an SMS but failed. Please check your number or try again later.');
     }
-
     return {
       statusCode: 200,
       headers: { 'Content-Type': 'text/xml' },
@@ -48,7 +49,7 @@ exports.handler = async (event) => {
     };
   }
 
-  // Build formatted message
+  // Build formatted SMS
   const fmt = (v) => (typeof v === 'number' ? v.toFixed(4) : String(v));
   const messageLines = [
     `🌱 Kisan Saathi — Farm Nutrient Report`,
@@ -64,12 +65,13 @@ exports.handler = async (event) => {
   const body = messageLines.join('\n');
 
   try {
+    console.log("DEBUG - Sending SMS to:", callerNumber, "from:", process.env.TWILIO_PHONE_NUMBER);
     const res = await client.messages.create({
       to: callerNumber,
       from: process.env.TWILIO_PHONE_NUMBER,
       body
     });
-    console.log('Farm SMS sent, sid:', res && res.sid);
+    console.log("DEBUG - SMS SID:", res && res.sid);
     twiml.say('Thank you. We have sent the nutrient details to your phone.');
   } catch (err) {
     console.error('Farm SMS send failed:', err);
