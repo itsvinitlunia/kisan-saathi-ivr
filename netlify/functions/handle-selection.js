@@ -9,7 +9,6 @@ exports.handler = async (event) => {
   const callerNumber = params.From;
   const twiml = new VoiceResponse();
 
-  // safety: if no caller number, return an XML telling user we couldn't proceed
   if (!callerNumber) {
     twiml.say('We did not detect your phone number. Goodbye.');
     return {
@@ -21,45 +20,32 @@ exports.handler = async (event) => {
 
   try {
     if (Digits === '1') {
-      // Ask for farm id via DTMF
+      // Farm ID flow
       const gather = twiml.gather({
         numDigits: 6,
         action: '/.netlify/functions/farm',
         method: 'POST'
       });
       gather.say('Please enter your Farm ID now, followed by the pound key.');
-      return {
-        statusCode: 200,
-        headers: { 'Content-Type': 'text/xml' },
-        body: twiml.toString()
-      };
     } else if (Digits === '2') {
-      // Static SMS immediately
+      // Static SMS
       twiml.say('Thank you. We will message you the information shortly.');
 
       const client = twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);
-      const smsBody = `🌱 Kisan Saathi — Demo Message
-This is a static demo SMS for Option 2. Soil analysis data will be provided in future.`;
+      const smsBody = `🌱 Kisan Saathi Demo: Soil health tips will be shared soon. Stay tuned!`;
 
       try {
-        const result = await client.messages.create({
+        const res = await client.messages.create({
           to: callerNumber,
           from: process.env.TWILIO_PHONE_NUMBER,
           body: smsBody
         });
-        // log success
-        console.log('Option 2 static SMS sent, sid:', result && result.sid);
+        console.log('Option 2 static SMS sent, sid:', res && res.sid);
       } catch (err) {
         console.error('Option 2 static SMS failed:', err);
       }
-
-      return {
-        statusCode: 200,
-        headers: { 'Content-Type': 'text/xml' },
-        body: twiml.toString()
-      };
     } else if (Digits === '3') {
-      // Speech gather for commodity
+      // Commodity gather
       const gather = twiml.gather({
         input: 'speech',
         speechTimeout: 'auto',
@@ -67,35 +53,22 @@ This is a static demo SMS for Option 2. Soil analysis data will be provided in f
         method: 'POST',
         language: 'en-IN'
       });
-      gather.say('Please say the commodity you want the market price for after the beep. For example: tomato.');
-      return {
-        statusCode: 200,
-        headers: { 'Content-Type': 'text/xml' },
-        body: twiml.toString()
-      };
+      gather.say('Please say the commodity you want the market price for. For example, say tomato.');
     } else if (Digits === '4') {
-      // Redirect / dial to expert
+      // Call transfer
+      twiml.say('Please wait while we connect your call.');
       twiml.dial('+919702120202');
-      return {
-        statusCode: 200,
-        headers: { 'Content-Type': 'text/xml' },
-        body: twiml.toString()
-      };
     } else {
       twiml.say('Invalid selection. Goodbye.');
-      return {
-        statusCode: 200,
-        headers: { 'Content-Type': 'text/xml' },
-        body: twiml.toString()
-      };
     }
   } catch (err) {
     console.error('handle-selection error:', err);
     twiml.say('An error occurred. Goodbye.');
-    return {
-      statusCode: 500,
-      headers: { 'Content-Type': 'text/xml' },
-      body: twiml.toString()
-    };
   }
+
+  return {
+    statusCode: 200,
+    headers: { 'Content-Type': 'text/xml' },
+    body: twiml.toString()
+  };
 };
